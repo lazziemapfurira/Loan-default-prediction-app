@@ -34,15 +34,51 @@ The application features a clean, user-friendly interface with multiple input se
 
 ## Installation
 
+## Run Locally
+Initialize git
+
 ```bash
-# Clone repository
+git init
+```
+
+
+Clone the project
+
+```bash
 git clone https://github.com/lazziemapfurira/Loan-default-prediction-app.git
+```
+
+enter the project directory
+
+```bash
 cd Loan-default-prediction-app
+```
 
-# Install dependencies
-pip install -r requirements.txt
+Create a conda virtual environment and install all the packages from the environment.yml (recommended)
 
-# Launch application
-streamlit run app.py
+```bash
+conda env create --prefix <env_name> --file assets/environment.yml
+```
+
+Activate the conda environment
+
+```bash
+conda activate <env_name>
+```
+
+List all the packages installed
+
+```bash
+conda list
+```
+
+Start the streamlit server locally
+
+```bash
+streamlit run streamlit run app.py
+```
+
+
+
 
 
