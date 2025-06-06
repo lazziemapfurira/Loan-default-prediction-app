@@ -1,89 +1,78 @@
 """
 Created on Sun Jun  1 20:52:02 2025
-Updated to separate SHAP computation from prediction
 
 @author: Lazzie
 """
 
+#import numpy as np
 import pickle 
 import streamlit as st
 import pandas as pd 
 import shap
 import matplotlib.pyplot as plt
+#import numpy as np
 
-# Load saved models
+#load saved model
+#XG BOOST
 xgb_model = pickle.load(open('Models_/XGBoost_model_pkl','rb'))
+#LightGBM
 lgbm_model = pickle.load(open('Models_/LightGBM_model_pkl','rb'))
 
-# Initialize session state to store data
+#INITIALIZE SESSION STATE TO STORE DATA
 if 'client_data' not in st.session_state:
     st.session_state.client_data = pd.DataFrame()
-if 'shap_values' not in st.session_state:
-    st.session_state.shap_values = None
-if 'prediction_made' not in st.session_state:
-    st.session_state.prediction_made = False
-if 'current_model' not in st.session_state:
-    st.session_state.current_model = None
-if 'current_inputs' not in st.session_state:
-    st.session_state.current_inputs = None
-
-# Cache SHAP explainer
+    
+#cache SHAP
 @st.cache_resource
 def get_explainer(_model):
     return shap.TreeExplainer(_model)
 
-# Create prediction function without SHAP computation
-def predict_without_shap(input_data, model, threshold=0.5):
-    feature_names = [
-        'GENDER_SUITE_ENCODED', 'EDUCATION_OCCUPATION_ENCODED',
-        'REL_EDUCATION_ENCODED', 'NAME_HOUSING_TYPE_ENCODED',
-        'AGE_YEARS', 'OWN_CAR_AGE', 'EMPLOYED_TO_AGE_RATIO', 'YEARS_EMPLOYED',
-        'PREV_APP_STATUS_REFUSED', 'PREV_APP_RATIO_PREV_APP_STATUS_UNUSED_OFFER',
-        'PREV_APK_AMT_CREDIT_APPLICATION_RATIO_MEAN', 'PREV_APK_AMT_CREDIT_MEAN', 'PREV_APK_AMT_DECLINED_MIN',
-        'PREV_APK_AMT_INTEREST_MAX', 'PREV_APK_AMT_CREDIT_MIN', 'PREV_APK_AMT_ANNUITY_MIN', 'PREV_AMT_PAYMENT_MIN', 'PREV_AMT_INTSALMENT_MAX',
-        'COUNT_PREV_PROD_Card_Street',
-        'NUM_INSTALMENTS_EARLY_PAYMENTS', 'NUM_INSTALMENTS_LATE_PAYMENTS', 'NUM_INSTALMENT_PARTIAL_PAYMENTS',
-        'AMT_ANNUITY', 'AMT_CREDIT', 'ANNUITY_CREDIT_RATIO', 'CNT_FAM_MEMBERS', 'YEARS_DETAILS_CHANGE_SUM',   
-        'WEIGHTED_EXT_SOURCE', 'EXT_SOURCE_MEAN', 
-        'OBS_DEF_30_MUL', 'OBS_DEF_60_MUL', 'DEF_30_CREDIT_RATIO', 'DEF_60_CREDIT_RATIO',
-        'CHILDREN_INCOME_RATIO', 'CREDIT_INCOME_RATIO', 'ANNUITY_INCOME_RATIO',
-        'REGION_RATING_MUL', 'REGION_POPULATION_RELATIVE', 'REGIONS_RATING_INCOME_MUL', 'FLAG_DOCUMENT_3'
-    ]
-    
-    input_df = pd.DataFrame([input_data], columns=feature_names)
-    
-    # Predict using the model
+
+#Create default prediction function
+def prediction_default(input_data,model, threshold = 0.5):
+    feature_names =[
+    'GENDER_SUITE_ENCODED','EDUCATION_OCCUPATION_ENCODED',
+    'REL_EDUCATION_ENCODED','NAME_HOUSING_TYPE_ENCODED',
+
+    'AGE_YEARS', 'OWN_CAR_AGE', 'EMPLOYED_TO_AGE_RATIO','YEARS_EMPLOYED',
+ #PREV STAFF
+     'PREV_APP_STATUS_REFUSED','PREV_APP_RATIO_PREV_APP_STATUS_UNUSED_OFFER',
+    'PREV_APK_AMT_CREDIT_APPLICATION_RATIO_MEAN', 'PREV_APK_AMT_CREDIT_MEAN', 'PREV_APK_AMT_DECLINED_MIN',
+ 'PREV_APK_AMT_INTEREST_MAX','PREV_APK_AMT_CREDIT_MIN','PREV_APK_AMT_ANNUITY_MIN','PREV_AMT_PAYMENT_MIN','PREV_AMT_INTSALMENT_MAX',
+    #products
+    'COUNT_PREV_PROD_Card_Street',
+    #instalments
+    'NUM_INSTALMENTS_EARLY_PAYMENTS','NUM_INSTALMENTS_LATE_PAYMENTS','NUM_INSTALMENT_PARTIAL_PAYMENTS',
+
+    #Alternstive
+'AMT_ANNUITY','AMT_CREDIT','ANNUITY_CREDIT_RATIO','CNT_FAM_MEMBERS',  'YEARS_DETAILS_CHANGE_SUM',   
+'WEIGHTED_EXT_SOURCE','EXT_SOURCE_MEAN', 
+ 'OBS_DEF_30_MUL','OBS_DEF_60_MUL','DEF_30_CREDIT_RATIO','DEF_60_CREDIT_RATIO',
+ 'CHILDREN_INCOME_RATIO','CREDIT_INCOME_RATIO','ANNUITY_INCOME_RATIO',
+'REGION_RATING_MUL','REGION_POPULATION_RELATIVE','REGIONS_RATING_INCOME_MUL','FLAG_DOCUMENT_3'
+]
+    #input to numpy array
+   # input_data_numpy = np.array(input_data).astype(np.float32)
+
+    #reshape the input 
+    #input_reshaped= input_data_numpy.reshape(1,-1)
+    input_df = pd.DataFrame([input_data], columns = feature_names)
+    explainer = get_explainer(model)
+    shap_values = explainer(input_df)
+
+    #predict using XG Boost
+    #prediction = model.predict(input_df)
     proba = model.predict_proba(input_df)[0][1]
     prediction = 1 if proba >= threshold else 0
-    proba_percentage = round(proba*100, 0)
-    
+    proba_percentage = round(proba*100,0)
+    print(prediction) 
     if prediction == 1:
-        return '❌ Will not pay back the loan', proba_percentage
+        return '❌ Will not pay back the loan',proba_percentage,shap_values
     else:
-        return '✅ Will pay back the loan', proba_percentage
+        return '✅ Will pay back the loan',proba_percentage,shap_values
+    
 
-# Function to compute SHAP values
-def compute_shap_values(input_data, model):
-    feature_names = [
-        'GENDER_SUITE_ENCODED', 'EDUCATION_OCCUPATION_ENCODED',
-        'REL_EDUCATION_ENCODED', 'NAME_HOUSING_TYPE_ENCODED',
-        'AGE_YEARS', 'OWN_CAR_AGE', 'EMPLOYED_TO_AGE_RATIO', 'YEARS_EMPLOYED',
-        'PREV_APP_STATUS_REFUSED', 'PREV_APP_RATIO_PREV_APP_STATUS_UNUSED_OFFER',
-        'PREV_APK_AMT_CREDIT_APPLICATION_RATIO_MEAN', 'PREV_APK_AMT_CREDIT_MEAN', 'PREV_APK_AMT_DECLINED_MIN',
-        'PREV_APK_AMT_INTEREST_MAX', 'PREV_APK_AMT_CREDIT_MIN', 'PREV_APK_AMT_ANNUITY_MIN', 'PREV_AMT_PAYMENT_MIN', 'PREV_AMT_INTSALMENT_MAX',
-        'COUNT_PREV_PROD_Card_Street',
-        'NUM_INSTALMENTS_EARLY_PAYMENTS', 'NUM_INSTALMENTS_LATE_PAYMENTS', 'NUM_INSTALMENT_PARTIAL_PAYMENTS',
-        'AMT_ANNUITY', 'AMT_CREDIT', 'ANNUITY_CREDIT_RATIO', 'CNT_FAM_MEMBERS', 'YEARS_DETAILS_CHANGE_SUM',   
-        'WEIGHTED_EXT_SOURCE', 'EXT_SOURCE_MEAN', 
-        'OBS_DEF_30_MUL', 'OBS_DEF_60_MUL', 'DEF_30_CREDIT_RATIO', 'DEF_60_CREDIT_RATIO',
-        'CHILDREN_INCOME_RATIO', 'CREDIT_INCOME_RATIO', 'ANNUITY_INCOME_RATIO',
-        'REGION_RATING_MUL', 'REGION_POPULATION_RELATIVE', 'REGIONS_RATING_INCOME_MUL', 'FLAG_DOCUMENT_3'
-    ]
-    input_df = pd.DataFrame([input_data], columns=feature_names)
-    explainer = get_explainer(model)
-    return explainer(input_df)
-
-# Label Encoding Mappings
+#Label Encoding  Mappings
 Housing_mapping = {
     'Co-op apartment': 0,
     'House_or_apartment': 1,
@@ -178,6 +167,7 @@ education_occupation = {
 'Secondary_XNA' :80
 }
 
+#Mapping for GENDER_SUITE:
 gender_suite = {
 'F_Children' : 0
 ,'F_Family' : 1
@@ -196,6 +186,7 @@ gender_suite = {
 ,'M_Unaccompanied' : 14
 ,'M_XNA' : 15}
 
+#Mapping for REL_EDUCATION:
 rel_education = {
 'In_Relationship_Academic degree' : 0
 ,'In_Relationship_Higher education' : 1
@@ -213,59 +204,58 @@ rel_education = {
 ,'Single_Lower secondary' : 13
 ,'Single_Secondary' : 14}
 
+#gender mapping 
 gender_mapping = {
     'M': 1,
     'F':0 }
-
-# Education
+#Education
 edu = ['Academic degree',
  'Higher education',
   'Incomplete higher',
   'Lower secondary',
   'Secondary']
 
-# Occupation
+#occupation
 occu =['Laborers','Cooking staff','Sales staff','XNA','Managers'
 ,'Private service staff','Core staff','High skill tech staff'
 ,'Medicine staff','Drivers','Security staff','Low-skill Laborers'
 ,'Accountants','Cleaning staff','Realty agents','Secretaries'
 ,'Waiters/barmen staff','IT staff','HR staff']
   
-# Relationship
+#Relationship
 rel = ['Single', 'Previously Married', 'In_Relationship']
-
-# Gender 
+#Gender 
 gender = ['M', 'F']
 
-# Suite 
+#Suite 
 suite = ['Unaccompanied', 'Family', 'Spouse_partner', 'Other_A', 'Children',
        'Other_B', 'XNA', 'Group of people']
-
 def main():
-    # Title
+    #Title
+    #st.title('Default Prediction App')
     html_temp = """
     <div style = 'background-color: #FF4B4B; padding: 10px'> 
     <h2 style = 'color: white; text-align: center;'> 🏦 Default Risk Prediction App </h2>
     </div>
     """
     st.markdown(html_temp, unsafe_allow_html=True)
-    
+    #st.markdown("<h1 style='color:tomato;'>🏦 Default Risk Prediction App</h1>", unsafe_allow_html=True)
+   # st.markdown("<h3 style='color:orange;'>Model based on behavioural and alternative data</h3>", unsafe_allow_html=True)
+   # st.subheader('Model based on behavioural and alternative data', divider = 'rainbow')
     st.markdown('**Select the model of your choice**')
-    tab1, tab2 = st.tabs(['Model 1 - XGBoost', 'Model 2 - LightGBM'])
+    tab1,tab2= st.tabs(['Model 1 - XGBoost','Model 2 - LightGBM'])
     
     with tab1:
-        run_prediction_tab(xgb_model, "XGBoost")
+        run_prediction_tab(xgb_model)
     with tab2:
-        run_prediction_tab(lgbm_model, "LightGBM")
+        run_prediction_tab(lgbm_model)
+   # st.markdown('Please fill in the blank spaces with client information')
+        
 
-def run_prediction_tab(model, model_name):
-    # Reset SHAP values when switching tabs or models
-    if st.session_state.current_model != model_name:
-        st.session_state.shap_values = None
-        st.session_state.prediction_made = False
-        st.session_state.current_model = model_name
-    
-    with st.form(key=f'Prediction_Form_{model_name}'):
+def run_prediction_tab(model):
+    #Get input data from user
+    with st.form(key=f'Prediction_Form_{type(model).__name__}'):
+        #st.markdown('**Client Personal Information**')
         st.markdown("<h5 style='color:#FF4B4B;'>👤  Client Personal Information</h5>", unsafe_allow_html=True)
         col1,col2,col3 = st.columns(3)
         with col1:
@@ -278,7 +268,7 @@ def run_prediction_tab(model, model_name):
         gender_sui = gen+'_'+suit
         GENDER_SUITE_ENCODED = gender_suite[gender_sui]
         
-        # Education occupation 
+        #Education ocuupation 
         col1,col2,col3 = st.columns(3)
         with col1:
             Education = st.selectbox('Highest level of education:', list(edu))
@@ -294,6 +284,7 @@ def run_prediction_tab(model, model_name):
         col1,col2,col3,col4 = st.columns(4)
         with col1:
             Age = st.number_input('Age', min_value=18, max_value= 70)
+        #own car age
         with col2:
             OWN_CAR_AGE = st.number_input("Age of car (if No:-1)", min_value= -1)
         with col3:
@@ -301,7 +292,9 @@ def run_prediction_tab(model, model_name):
         with col4:
             CNT_FAM_MEMBERS = st.number_input('**Family Members** count', min_value=0)
             
+        
         st.divider()
+        #st.markdown('**💰 Client Employment and Income Incicators**')
         st.markdown("<h5 style='color:#FF4B4B;'>💰 Client Employment and Income Information</h5>", unsafe_allow_html=True)
         col1,col2,col3,col4 = st.columns(4)
         with col1:
@@ -318,9 +311,12 @@ def run_prediction_tab(model, model_name):
         ANNUITY_CREDIT_RATIO = (annuity/(credit+0.00001))
         ANNUITY_INCOME_RATIO= annuity / (income + 0.0000001)
         CREDIT_INCOME_RATIO = credit / (income + 0.0000001)
+        #Age employment 
         EMPLOYED_TO_AGE_RATIO = (YEARS_EMPLOYED /(Age + 000.1))  
         
         st.divider()
+        #prev behaviour
+        #st.markdown('**📄📚 Client Loan History**')
         st.markdown("<h5 style='color:#FF4B4B;'>📚 Client Loan History</h5>", unsafe_allow_html=True)
         col1,col2,col3 = st.columns(3)
         with col1:
@@ -340,6 +336,7 @@ def run_prediction_tab(model, model_name):
             PREV_APK_AMT_CREDIT_MEAN = st.number_input('Average **Amount Credit**')
         with col3:
             PREV_APK_AMT_DECLINED_MIN = st.number_input('Lowest *Application Amount Declined*')
+         #calculation - credit and annuity
         PREV_APK_AMT_CREDIT_APPLICATION_RATIO_MEAN = application /(PREV_APK_AMT_CREDIT_MEAN + 0.00001)
         
         col1,col2,col3 = st.columns(3)
@@ -349,14 +346,16 @@ def run_prediction_tab(model, model_name):
             PREV_APK_AMT_ANNUITY_MIN = st.number_input('Lowest monthly annuity')
         with col3:
             PREV_APK_AMT_INTEREST_MAX = st.number_input('Highest **Interest** collected from client')
-        
+        #Previous products applied and loan reason:
         COUNT_PREV_PROD_Card_Street= st.number_input('Number of times applicant applied for the **CARD STREET PRODUCT**', min_value=0)
         st.divider()
-        
+        #Instalments payments behaviour
+        #st.markdown('**Installment Payment Behaviour**')
         st.markdown("<h5 style='color:#FF4B4B;'>📊 Installment Payment Behaviour</h5>", unsafe_allow_html=True)
         col1, col2,col3 = st.columns(3)
         with col1:
             NUM_INSTALMENTS_EARLY_PAYMENTS = st.number_input('Number of **EARLY** payments',min_value = 0)
+        
         with col2:
             NUM_INSTALMENT_PARTIAL_PAYMENTS = st.number_input('Number of **PARTIAL** payments', min_value=0, max_value=140000)
         with col3:
@@ -368,7 +367,8 @@ def run_prediction_tab(model, model_name):
         with col2:
             PREV_AMT_INTSALMENT_MAX = st.number_input('Highest instalment amount paid')
         st.divider()
-        
+        #External Credit source
+        #st.markdown('**Credit Scoring & Risk Indicators**')
         st.markdown("<h5 style='color:#FF4B4B;'>💳 Credit Scoring & Risk Indicators</h5>", unsafe_allow_html=True)
         col1,col2,col3 = st.columns(3)
         with col1:
@@ -378,6 +378,7 @@ def run_prediction_tab(model, model_name):
         with col3:
             ext_3 = st.number_input('External Credit score 3: ',0.00,1.)  
         
+       # st.markdown('**Client Social Circle Information**')
         col1,col2 = st.columns(2)
         with col1:
             obs_60 = st.number_input("People in client social circle struggling to pay in time: last 2 months", 0,5)
@@ -390,15 +391,19 @@ def run_prediction_tab(model, model_name):
             def_30 = st.number_input("People client social circle who defaulted: previous month", 0,5)   
         
         FLAG_DOCUMENT_3 = st.slider('Applicant provided **Document 3**',0,1) 
+          #weighted  and mean
         WEIGHTED_EXT_SOURCE = (ext_1*2) + (ext_2*3) +(ext_3*4)
         EXT_SOURCE_MEAN = (ext_1+ext_2+ext_3)/3
         
+        #OBS and DEf 60 calculations
         OBS_DEF_60_MUL = obs_60 * def_60
         OBS_DEF_30_MUL = obs_30 * def_30
         DEF_30_CREDIT_RATIO = credit / (def_30 +  0.00001)
         DEF_60_CREDIT_RATIO = credit / (def_60 +  0.00001)
             
+        #region rating
         st.divider()
+        #st.markdown('**Client residential Region Information**')
         st.markdown("<h5 style='color:#FF4B4B;'>🌍 Client residential Region Information</h5>", unsafe_allow_html=True)
         col1,col2,col3 = st.columns(3)
         with col1:
@@ -409,7 +414,7 @@ def run_prediction_tab(model, model_name):
             REGION_POPULATION_RELATIVE = st.number_input('Region Population', min_value=0.000,max_value=1.000)
         REGION_RATING_MUL = REGION_RATING_CLIENT * REGION_RATING_CLIENT_W_CITY
         REGIONS_RATING_INCOME_MUL = (REGION_RATING_CLIENT +REGION_RATING_CLIENT_W_CITY) * income
-        
+        #years details change 
         col1,col2,col3 = st.columns(3)
         with col1:
             Phone = st.number_input('Years since changed Phone', min_value=0.0)
@@ -420,46 +425,38 @@ def run_prediction_tab(model, model_name):
         YEARS_DETAILS_CHANGE_SUM= Phone + Registration + ID
 
         submitted = st.form_submit_button('Predict')
-        
         if submitted:
             inputs = [
-                GENDER_SUITE_ENCODED, EDUCATION_OCCUPATION_ENCODED,
-                REL_EDUCATION_ENCODED, NAME_HOUSING_TYPE_ENCODED,
-                Age, OWN_CAR_AGE, EMPLOYED_TO_AGE_RATIO, YEARS_EMPLOYED,
-                PREV_APP_STATUS_REFUSED, PREV_APP_RATIO_PREV_APP_STATUS_UNUSED_OFFER,
-                PREV_APK_AMT_CREDIT_APPLICATION_RATIO_MEAN, PREV_APK_AMT_CREDIT_MEAN, PREV_APK_AMT_DECLINED_MIN,
-                PREV_APK_AMT_INTEREST_MAX, PREV_APK_AMT_CREDIT_MIN, PREV_APK_AMT_ANNUITY_MIN, PREV_AMT_PAYMENT_MIN, PREV_AMT_INTSALMENT_MAX,
-                COUNT_PREV_PROD_Card_Street,
-                NUM_INSTALMENTS_EARLY_PAYMENTS, NUM_INSTALMENTS_LATE_PAYMENTS, NUM_INSTALMENT_PARTIAL_PAYMENTS,
-                annuity, credit, ANNUITY_CREDIT_RATIO, CNT_FAM_MEMBERS, YEARS_DETAILS_CHANGE_SUM,
-                WEIGHTED_EXT_SOURCE, EXT_SOURCE_MEAN, OBS_DEF_30_MUL, OBS_DEF_60_MUL,
-                DEF_30_CREDIT_RATIO, DEF_60_CREDIT_RATIO, CHILDREN_INCOME_RATIO, CREDIT_INCOME_RATIO, ANNUITY_INCOME_RATIO,
-                REGION_RATING_MUL, REGION_POPULATION_RELATIVE, REGIONS_RATING_INCOME_MUL, FLAG_DOCUMENT_3
-            ]
-            
-            # Prediction without SHAP
-            label, proba = predict_without_shap(inputs, model)
+GENDER_SUITE_ENCODED,EDUCATION_OCCUPATION_ENCODED,
+REL_EDUCATION_ENCODED,NAME_HOUSING_TYPE_ENCODED,Age, OWN_CAR_AGE, EMPLOYED_TO_AGE_RATIO,YEARS_EMPLOYED,
+ #PREV STAFF
+PREV_APP_STATUS_REFUSED,PREV_APP_RATIO_PREV_APP_STATUS_UNUSED_OFFER,
+PREV_APK_AMT_CREDIT_APPLICATION_RATIO_MEAN, PREV_APK_AMT_CREDIT_MEAN, PREV_APK_AMT_DECLINED_MIN,
+PREV_APK_AMT_INTEREST_MAX,PREV_APK_AMT_CREDIT_MIN,PREV_APK_AMT_ANNUITY_MIN,PREV_AMT_PAYMENT_MIN,PREV_AMT_INTSALMENT_MAX,COUNT_PREV_PROD_Card_Street,
+    #instalments
+    NUM_INSTALMENTS_EARLY_PAYMENTS,NUM_INSTALMENTS_LATE_PAYMENTS,NUM_INSTALMENT_PARTIAL_PAYMENTS,
+
+    #Alternstive
+annuity,credit,ANNUITY_CREDIT_RATIO,CNT_FAM_MEMBERS,  YEARS_DETAILS_CHANGE_SUM,WEIGHTED_EXT_SOURCE,EXT_SOURCE_MEAN, OBS_DEF_30_MUL,OBS_DEF_60_MUL,
+DEF_30_CREDIT_RATIO,DEF_60_CREDIT_RATIO,CHILDREN_INCOME_RATIO,CREDIT_INCOME_RATIO,ANNUITY_INCOME_RATIO,REGION_RATING_MUL,REGION_POPULATION_RELATIVE,REGIONS_RATING_INCOME_MUL,FLAG_DOCUMENT_3
+]
+            #prediction  
+            label,proba,shap_values = prediction_default(inputs,model)
             st.success(label)
             st.info(f'📈 Probability of Default: **{proba}%**')
             
-            # Store the inputs and model for SHAP computation
-            st.session_state.current_inputs = inputs
-            st.session_state.current_model = model
-            st.session_state.prediction_made = True
-    
-    # Add SHAP computation button after the form
-    if st.session_state.prediction_made and st.session_state.current_model == model:
-        if st.button('Compute SHAP Values', key=f'shap_button_{model_name}'):
-            with st.spinner('Computing SHAP values...'):
-                shap_values = compute_shap_values(st.session_state.current_inputs, st.session_state.current_model)
-                st.session_state.shap_values = shap_values
-                
-        if st.session_state.shap_values is not None:
-            st.subheader("SHAP Explanation")
+            st.subheader("Computed SHAP explanation")
             st.markdown('**RED** coloured features increase the default probability while **BLUE** pulls it down.')
-            fig, ax = plt.subplots()
-            shap.plots.waterfall(st.session_state.shap_values[0], max_display=10, show=False)
+            fig,ax = plt.subplots()
+            shap.plots.waterfall(shap_values[0],max_display= 10, show = False)
             st.pyplot(fig)
+            
+          
+
+            
+        
 
 if __name__ == '__main__':
     main()
+
+
