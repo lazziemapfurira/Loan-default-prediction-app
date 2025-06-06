@@ -6,7 +6,7 @@ A Streamlit web application that predicts loan default risk using machine learni
 
 The application features a clean, user-friendly interface with multiple input sections for comprehensive risk assessment:
 
-![Default Risk Prediction App Screenshot](image.png)
+![Default Risk Prediction App Screenshot](images/default_image.png)
 *Interactive web interface showing the prediction form with personal information, financial details, and SHAP explanation visualization*
 
 ## Key Features
@@ -19,7 +19,7 @@ The application features a clean, user-friendly interface with multiple input se
 
 ## Live Demo
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://your-app-name.streamlit.app/)
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://loandefaultalternative.streamlit.app/)
 
 ## Installation
 
