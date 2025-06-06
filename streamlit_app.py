@@ -14,9 +14,9 @@ import matplotlib.pyplot as plt
 
 #load saved model
 #XG BOOST
-xgb_model = pickle.load(open('C:/Users/26378/Desktop/Capstone Project/Default prediction/SHAP/Models/XGBoost_test_model_pkl','rb'))
+xgb_model = pickle.load(open('Models_/XGBoost_test_model_pkl','rb'))
 #LightGBM
-lgbm_model = pickle.load(open('C:/Users/26378/Desktop/Capstone Project/Default prediction/SHAP/Models/LightGBM_test_model_pkl','rb'))
+lgbm_model = pickle.load(open('Models_/LightGBM_test_model_pkl','rb'))
 
 #INITIALIZE SESSION STATE TO STORE DATA
 if 'client_data' not in st.session_state:
