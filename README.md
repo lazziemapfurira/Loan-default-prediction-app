@@ -1,4 +1,4 @@
-# 📦 Streamlit App Starter Kit 
+# 📦 🏦 Default Risk Prediction App
 ```
 ⬆️ (Replace above with your app's name)
 ```
