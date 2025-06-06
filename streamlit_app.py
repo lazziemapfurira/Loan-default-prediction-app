@@ -18,18 +18,19 @@ xgb_model = pickle.load(open('Models_/XGBoost_model_pkl','rb'))
 #LightGBM
 lgbm_model = pickle.load(open('Models_/LightGBM_model_pkl','rb'))
 
-#INITIALIZE SESSION STATE TO STORE DATA
+# Initialize session state
 if 'client_data' not in st.session_state:
-    st.session_state.client_data = pd.DataFrame()
-    
-#cache SHAP
+    st.session_state.client_data = None
+if 'last_model' not in st.session_state:
+    st.session_state.last_model = None
+
+# Cache SHAP explainer
 @st.cache_resource
 def get_explainer(_model):
     return shap.TreeExplainer(_model)
 
-
-#Create default prediction function
-def prediction_default(input_data,model, threshold = 0.5):
+# Default prediction function (no SHAP)
+def prediction_default(input_data, model, threshold=0.5):
     feature_names =[
     'GENDER_SUITE_ENCODED','EDUCATION_OCCUPATION_ENCODED',
     'REL_EDUCATION_ENCODED','NAME_HOUSING_TYPE_ENCODED',
@@ -70,8 +71,21 @@ def prediction_default(input_data,model, threshold = 0.5):
         return '❌ Will not pay back the loan',proba_percentage,shap_values
     else:
         return '✅ Will pay back the loan',proba_percentage,shap_values
+     # Save input for SHAP
+    st.session_state.client_data = input_df
+    st.session_state.last_model = model
     
-
+# SHAP computation
+def compute_shap_values():
+    if st.session_state.client_data is not None and st.session_state.last_model is not None:
+        explainer = get_explainer(st.session_state.last_model)
+        shap_values = explainer(st.session_state.client_data)
+        
+        st.subheader("🔍 SHAP Value Summary")
+        shap.plots.waterfall(shap_values[0], max_display=10)
+        st.pyplot(bbox_inches='tight')
+    else:
+        st.warning("⚠️ Please make a prediction first.")
 #Label Encoding  Mappings
 Housing_mapping = {
     'Co-op apartment': 0,
@@ -449,7 +463,7 @@ DEF_30_CREDIT_RATIO,DEF_60_CREDIT_RATIO,CHILDREN_INCOME_RATIO,CREDIT_INCOME_RATI
             st.markdown('**RED** coloured features increase the default probability while **BLUE** pulls it down.')
             fig,ax = plt.subplots()
             shap.plots.waterfall(shap_values[0],max_display= 10, show = False)
-            st.pyplot(fig)
+            st.pyplot(fig,bbox_inches='tight')
             
           
 
