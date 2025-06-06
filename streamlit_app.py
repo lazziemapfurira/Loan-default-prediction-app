@@ -256,7 +256,7 @@ def main():
     #st.markdown("<h1 style='color:tomato;'>🏦 Default Risk Prediction App</h1>", unsafe_allow_html=True)
    # st.markdown("<h3 style='color:orange;'>Model based on behavioural and alternative data</h3>", unsafe_allow_html=True)
    # st.subheader('Model based on behavioural and alternative data', divider = 'rainbow')
-    st.markdown('**Select the model of your choice**')
+   # st.markdown('**Select the model of your choice**')
     tab1,tab2= st.tabs(['Model 1 - XGBoost','Model 2 - LightGBM'])
     
     with tab1:
