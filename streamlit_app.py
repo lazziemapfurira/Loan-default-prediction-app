@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 #load saved model
 #XG BOOST
-#xgb_model = pickle.load(open('Models_/XGBoost_model_pkl','rb'))
+xgb_model = pickle.load(open('Models_/XGBoost_model_pkl','rb'))
 #LightGBM
 lgbm_model = pickle.load(open('Models_/LightGBM_model_pkl','rb'))
 
