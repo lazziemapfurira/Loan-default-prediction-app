@@ -1,4 +1,4 @@
-# Default Risk Prediction App
+# 🏦 Default Risk Prediction App
 
 A Streamlit web application that predicts loan default risk using machine learning models (XGBoost and LightGBM) with explainable AI (SHAP) capabilities.
 
@@ -7,7 +7,7 @@ A Streamlit web application that predicts loan default risk using machine learni
 The application features a clean, user-friendly interface with multiple input sections for comprehensive risk assessment:
 
 ![Default Risk Prediction App Screenshot](images/default_image.png)
-*Interactive web interface showing the prediction form with personal information, financial details, and SHAP explanation visualization*
+- Interactive web interface showing the prediction form with personal information, financial details, and SHAP explanation visualization*
 
 ## Key Features
 
@@ -25,8 +25,8 @@ The application features a clean, user-friendly interface with multiple input se
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/default-risk-prediction.git
-cd default-risk-prediction
+git clone https://github.com/lazziemapfurira/Loan-default-prediction-app
+cd Loan-default-prediction-app
 
 # Install dependencies
 pip install -r requirements.txt
@@ -34,32 +34,4 @@ pip install -r requirements.txt
 # Launch application
 streamlit run app.py
 
-![banner](assets/Credit_card_approval_banner.png)
-Banner [source](https://banner.godori.dev/)
 
-
-# 📦 🏦 Default Risk Prediction App
-```
-⬆️ (Replace above with your app's name)
-```
-
-Description of the app ...
-
-## Demo App
-
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://app-starter-kit.streamlit.app/)
-
-## GitHub Codespaces
-
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/streamlit/app-starter-kit?quickstart=1)
-
-## Section Heading
-
-This is filler text, please replace this with text for this section.
-
-## Further Reading
-
-This is filler text, please replace this with a explanatory text about further relevant resources for this repo
-- Resource 1
-- Resource 2
-- Resource 3
