@@ -25,7 +25,7 @@ The application features a clean, user-friendly interface with multiple input se
 
 ```bash
 # Clone repository
-git clone https://github.com/lazziemapfurira/Loan-default-prediction-app
+git clone https://github.com/lazziemapfurira/Loan-default-prediction-app.git
 cd Loan-default-prediction-app
 
 # Install dependencies
