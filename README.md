@@ -1,3 +1,7 @@
+![banner](assets/Credit_card_approval_banner.png)
+Banner [source](https://banner.godori.dev/)
+
+
 # 📦 🏦 Default Risk Prediction App
 ```
 ⬆️ (Replace above with your app's name)
