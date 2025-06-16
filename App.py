@@ -29,8 +29,8 @@ if 'last_model' not in st.session_state:
 def get_explainer(_model):
     return shap.TreeExplainer(_model)
 
-# Default prediction function (no SHAP)
-def prediction_default(input_data, model, threshold=0.5):
+#Create default prediction function
+def prediction_default(input_data,model, threshold = 0.5):
     feature_names =[
     'GENDER_SUITE_ENCODED','EDUCATION_OCCUPATION_ENCODED',
     'REL_EDUCATION_ENCODED','NAME_HOUSING_TYPE_ENCODED',
@@ -38,10 +38,7 @@ def prediction_default(input_data, model, threshold=0.5):
     'AGE_YEARS', 'OWN_CAR_AGE', 'EMPLOYED_TO_AGE_RATIO','YEARS_EMPLOYED',
  #PREV STAFF
      'PREV_APP_STATUS_REFUSED','PREV_APP_RATIO_PREV_APP_STATUS_UNUSED_OFFER',
-    'PREV_APK_AMT_CREDIT_APPLICATION_RATIO_MEAN', 'PREV_APK_AMT_CREDIT_MEAN', 'PREV_APK_AMT_DECLINED_MIN',
- 'PREV_APK_AMT_INTEREST_MAX','PREV_APK_AMT_CREDIT_MIN','PREV_APK_AMT_ANNUITY_MIN','PREV_AMT_PAYMENT_MIN','PREV_AMT_INTSALMENT_MAX',
-    #products
-    'COUNT_PREV_PROD_Card_Street',
+    'PREV_APK_AMT_CREDIT_APPLICATION_RATIO', 'PREV_APK_AMT_CREDIT', 'PREV_APK_AMT_DECLINED',
     #instalments
     'NUM_INSTALMENTS_EARLY_PAYMENTS','NUM_INSTALMENTS_LATE_PAYMENTS','NUM_INSTALMENT_PARTIAL_PAYMENTS',
 
@@ -50,7 +47,7 @@ def prediction_default(input_data, model, threshold=0.5):
 'WEIGHTED_EXT_SOURCE','EXT_SOURCE_MEAN', 
  'OBS_DEF_30_MUL','OBS_DEF_60_MUL','DEF_30_CREDIT_RATIO','DEF_60_CREDIT_RATIO',
  'CHILDREN_INCOME_RATIO','CREDIT_INCOME_RATIO','ANNUITY_INCOME_RATIO',
-'REGION_RATING_MUL','REGION_POPULATION_RELATIVE','REGIONS_RATING_INCOME_MUL','FLAG_DOCUMENT_3'
+'REGION_RATING_MUL','REGION_RATING_POPULATION_MUL','REGIONS_RATING_INCOME_MUL','FLAG_DOCUMENT_3'
 ]
     #input to numpy array
    # input_data_numpy = np.array(input_data).astype(np.float32)
@@ -71,21 +68,8 @@ def prediction_default(input_data, model, threshold=0.5):
         return '❌ Will not pay back the loan',proba_percentage,shap_values
     else:
         return '✅ Will pay back the loan',proba_percentage,shap_values
-     # Save input for SHAP
-    st.session_state.client_data = input_df
-    st.session_state.last_model = model
     
-# SHAP computation
-def compute_shap_values():
-    if st.session_state.client_data is not None and st.session_state.last_model is not None:
-        explainer = get_explainer(st.session_state.last_model)
-        shap_values = explainer(st.session_state.client_data)
-        
-        st.subheader("🔍 SHAP Value Summary")
-        shap.plots.waterfall(shap_values[0], max_display=10)
-        st.pyplot(bbox_inches='tight')
-    else:
-        st.warning("⚠️ Please make a prediction first.")
+
 #Label Encoding  Mappings
 Housing_mapping = {
     'Co-op apartment': 0,
@@ -105,8 +89,9 @@ education_occupation = {
 ,'Academic degree_Managers' :5
 ,'Academic degree_Private service staff' :6
 ,'Academic degree_Sales staff' :7
-,'Academic degree_XNA' :8
+,'Academic degree_Unknown' :8
 ,'Academic degree_IT staff' :82
+,'Academic degree_Medicine staff':-1
 ,'Higher education_Accountants' :9
 ,'Higher education_Cleaning staff' :10
 ,'Higher education_Cooking staff' :11
@@ -125,7 +110,7 @@ education_occupation = {
 ,'Higher education_Secretaries' :24
 ,'Higher education_Security staff' :25
 ,'Higher education_Waiters/barmen staff' :26
-,'Higher education_XNA' :27
+,'Higher education_Unknown' :27
 ,'Incomplete higher_Accountants' :28
 ,'Incomplete higher_Cleaning staff' :29
 ,'Incomplete higher_Cooking staff' :30
@@ -144,7 +129,7 @@ education_occupation = {
 ,'Incomplete higher_Secretaries' :43
 ,'Incomplete higher_Security staff' :44
 ,'Incomplete higher_Waiters/barmen staff' :45
-,'Incomplete higher_XNA' :46
+,'Incomplete higher_Unknown' :46
 ,'Lower secondary_Accountants' :47
 ,'Lower secondary_Cleaning staff' :48
 ,'Lower secondary_Cooking staff' :49
@@ -159,7 +144,7 @@ education_occupation = {
 ,'Lower secondary_Sales staff' :58
 ,'Lower secondary_Security staff' :59
 ,'Lower secondary_Waiters/barmen staff' :60
-,'Lower secondary_XNA' :61
+,'Lower secondary_Unknown' :61
 ,'Secondary_Accountants' :62
 ,'Secondary_Cleaning staff' :63
 ,'Secondary_Cooking staff' :64
@@ -178,35 +163,35 @@ education_occupation = {
 ,'Secondary_Secretaries' :77
 ,'Secondary_Security staff' :78
 ,'Secondary_Waiters/barmen staff' :79,
-'Secondary_XNA' :80
+'Secondary_Unknown' :80
 }
 
 #Mapping for GENDER_SUITE:
 gender_suite = {
-'F_Children' : 0
-,'F_Family' : 1
-,'F_Group of people' : 2
-,'F_Other_A' : 3
-,'F_Other_B' : 4
-,'F_Spouse_partner' : 5
-,'F_Unaccompanied' : 6
-,'F_XNA' : 7
-,'M_Children' : 8
-,'M_Family' : 9
-,'M_Group of people' : 10
-,'M_Other_A' : 11
-,'M_Other_B' : 12
-,'M_Spouse_partner' : 13
-,'M_Unaccompanied' : 14
-,'M_XNA' : 15}
+'Female_Children' : 0
+,'Female_Family' : 1
+,'Female_Group of people' : 2
+,'Female_Other_A' : 3
+,'Female_Other_B' : 4
+,'Female_Spouse_or_partner' : 5
+,'Female_Unaccompanied' : 6
+,'Female_Unknown' : 7
+,'Male_Children' : 8
+,'Male_Family' : 9
+,'Male_Group of people' : 10
+,'Male_Other_A' : 11
+,'Male_Other_B' : 12
+,'Male_Spouse_or_partner' : 13
+,'Male_Unaccompanied' : 14
+,'Male_Unknown' : 15}
 
 #Mapping for REL_EDUCATION:
 rel_education = {
-'In_Relationship_Academic degree' : 0
-,'In_Relationship_Higher education' : 1
-,'In_Relationship_Incomplete higher' : 2
-,'In_Relationship_Lower secondary' : 3
-,'In_Relationship_Secondary' : 4
+'In Relationship_Academic degree' : 0
+,'In Relationship_Higher education' : 1
+,'In Relationship_Incomplete higher' : 2
+,'In Relationship_Lower secondary' : 3
+,'In Relationship_Secondary' : 4
 ,'Previously Married_Academic degree' : 5
 ,'Previously Married_Higher education' : 6
 ,'Previously Married_Incomplete higher' : 7
@@ -220,8 +205,24 @@ rel_education = {
 
 #gender mapping 
 gender_mapping = {
-    'M': 1,
-    'F':0 }
+    'Male': 1,
+    'Female':0 }
+#flag document mapping 
+doc_mapping = {
+    'Yes': 1,
+    'No':0 }
+
+#Region Rating mapping 
+rating_mapping = {
+    'Low Density': 1,
+    'Medium Density': 2,
+    'High Density':3 }
+
+region_mapping = {
+    'Urban': 1,
+    'Semi - urban': 2,
+    'Rural':3 }
+
 #Education
 edu = ['Academic degree',
  'Higher education',
@@ -230,20 +231,31 @@ edu = ['Academic degree',
   'Secondary']
 
 #occupation
-occu =['Laborers','Cooking staff','Sales staff','XNA','Managers'
+occu =['Laborers','Cooking staff','Sales staff','Unknown','Managers'
 ,'Private service staff','Core staff','High skill tech staff'
 ,'Medicine staff','Drivers','Security staff','Low-skill Laborers'
 ,'Accountants','Cleaning staff','Realty agents','Secretaries'
 ,'Waiters/barmen staff','IT staff','HR staff']
   
 #Relationship
-rel = ['Single', 'Previously Married', 'In_Relationship']
+rel = ['Single', 'Previously Married', 'In Relationship']
 #Gender 
-gender = ['M', 'F']
+gender = ['Male', 'Female']
 
 #Suite 
-suite = ['Unaccompanied', 'Family', 'Spouse_partner', 'Other_A', 'Children',
-       'Other_B', 'XNA', 'Group of people']
+suite = ['Unaccompanied', 'Family', 'Spouse_or_partner', 'Other_A', 'Children',
+       'Other_B', 'Unknown', 'Group of people']
+
+# Credit Score Normalization Function
+def normalize_credit_score(score, min_score=250, max_score=850):
+    """Normalize credit score from original range to 0-1 scale"""
+    return (score - min_score) / (max_score - min_score)
+
+# Population Normalization Function
+def normalize_population(population, min_pop=10000, max_pop=500000):
+    """Normalize population from original range to 0-1 scale"""
+    return min(1.0, max(0.0, (population - min_pop) / (max_pop - min_pop)))
+
 def main():
     #Title
     #st.title('Default Prediction App')
@@ -257,18 +269,21 @@ def main():
    # st.markdown("<h3 style='color:orange;'>Model based on behavioural and alternative data</h3>", unsafe_allow_html=True)
    # st.subheader('Model based on behavioural and alternative data', divider = 'rainbow')
    # st.markdown('**Select the model of your choice**')
-    tab1,tab2= st.tabs(['Model 1 - XGBoost','Model 2 - LightGBM'])
+    #st.divider()
+    st.markdown("**This app predicts whether a client is likely to default on their loan application.** ***Fill in the client's current and historical information, then click the **Predict** button to see the result***")
+    st.write('*You can also see the SHAP(Shapley Additive eXplanations) values to understand which features contributed most to the prediction.*')
+    tab1,tab2= st.tabs(['Model 1 - LightGBM','Model 2 - XGBoost'])
     
     with tab1:
-        run_prediction_tab(xgb_model)
-    with tab2:
         run_prediction_tab(lgbm_model)
+    with tab2:
+        run_prediction_tab(xgb_model)
    # st.markdown('Please fill in the blank spaces with client information')
         
 
 def run_prediction_tab(model):
     #Get input data from user
-    with st.form(key=f'Prediction_Form_{type(model).__name__}'):
+    with st.form( key = f'Prediction_Form_{model}'):
         #st.markdown('**Client Personal Information**')
         st.markdown("<h5 style='color:#FF4B4B;'>👤  Client Personal Information</h5>", unsafe_allow_html=True)
         col1,col2,col3 = st.columns(3)
@@ -307,9 +322,8 @@ def run_prediction_tab(model):
             CNT_FAM_MEMBERS = st.number_input('**Family Members** count', min_value=0)
             
         
-        st.divider()
         #st.markdown('**💰 Client Employment and Income Incicators**')
-        st.markdown("<h5 style='color:#FF4B4B;'>💰 Client Employment and Income Information</h5>", unsafe_allow_html=True)
+       # st.markdown("<h5 style='color:#FF4B4B;'>💰 Client Employment and Income Information</h5>", unsafe_allow_html=True)
         col1,col2,col3,col4 = st.columns(4)
         with col1:
             YEARS_EMPLOYED = st.number_input('Years employed')
@@ -317,9 +331,9 @@ def run_prediction_tab(model):
             st.error('🚨 Invalid input: Years employed cannot exceed the age of the client')
         with col2:
             income = st.number_input('Annual Income(USD)', min_value=0)
-        with col3:
-            annuity = st.number_input('Amount annuity', min_value=0,max_value=2000)
         with col4:
+            annuity = st.number_input('Amount annuity', min_value=0,max_value=2000)
+        with col3:
             credit = st.number_input('Amount credit', min_value=450,max_value=50000)
         CHILDREN_INCOME_RATIO = (children/(income + 0.00001))
         ANNUITY_CREDIT_RATIO = (annuity/(credit+0.00001))
@@ -345,23 +359,14 @@ def run_prediction_tab(model):
         PREV_APP_RATIO_PREV_APP_STATUS_UNUSED_OFFER = (unused/(PREV_APP_COUNT + 0.00001))
         col1,col2,col3 = st.columns(3)
         with col1:
-            application = st.number_input('Average **Amount Application**')
+            application = st.number_input('Previous **Amount Application**')
         with col2:
-            PREV_APK_AMT_CREDIT_MEAN = st.number_input('Average **Amount Credit**')
+            PREV_APK_AMT_CREDIT = st.number_input('Previous **Amount Credit**')
         with col3:
-            PREV_APK_AMT_DECLINED_MIN = st.number_input('Lowest *Application Amount Declined*')
+            PREV_APK_AMT_DECLINED = st.number_input('Recent **Declined Amount**')
          #calculation - credit and annuity
-        PREV_APK_AMT_CREDIT_APPLICATION_RATIO_MEAN = application /(PREV_APK_AMT_CREDIT_MEAN + 0.00001)
-        
-        col1,col2,col3 = st.columns(3)
-        with col1:
-            PREV_APK_AMT_CREDIT_MIN = st.number_input('Lowest approved amount')
-        with col2:
-            PREV_APK_AMT_ANNUITY_MIN = st.number_input('Lowest monthly annuity')
-        with col3:
-            PREV_APK_AMT_INTEREST_MAX = st.number_input('Highest **Interest** collected from client')
-        #Previous products applied and loan reason:
-        COUNT_PREV_PROD_Card_Street= st.number_input('Number of times applicant applied for the **CARD STREET PRODUCT**', min_value=0)
+        PREV_APK_AMT_CREDIT_APPLICATION_RATIO_MEAN = application /(PREV_APK_AMT_CREDIT + 0.00001)
+     
         st.divider()
         #Instalments payments behaviour
         #st.markdown('**Installment Payment Behaviour**')
@@ -375,36 +380,35 @@ def run_prediction_tab(model):
         with col3:
             NUM_INSTALMENTS_LATE_PAYMENTS = st.number_input('Number of **LATE** payments', min_value = 0)
             
-        col1,col2 = st.columns(2)
-        with col1:
-            PREV_AMT_PAYMENT_MIN = st.number_input('Lowest installments amount paid')
-        with col2:
-            PREV_AMT_INTSALMENT_MAX = st.number_input('Highest instalment amount paid')
         st.divider()
         #External Credit source
         #st.markdown('**Credit Scoring & Risk Indicators**')
         st.markdown("<h5 style='color:#FF4B4B;'>💳 Credit Scoring & Risk Indicators</h5>", unsafe_allow_html=True)
         col1,col2,col3 = st.columns(3)
         with col1:
-            ext_1 = st.number_input('External Credit score 1: ',0.00,1.)
+            ext_1 = st.number_input('External Credit score 1: ', min_value=250, max_value=850,help="Enter  credit score (250-850 range)")
         with col2:
-            ext_2 = st.number_input('External Credit score 2: ',0.00,1.)
+            ext_2 = st.number_input('External Credit score 2: ', min_value=250, max_value=850,help="Enter credit score (250-850 range)")
         with col3:
-            ext_3 = st.number_input('External Credit score 3: ',0.00,1.)  
+            ext_3 = st.number_input('External Credit score 3: ', min_value=250, max_value=850,help="Enter credit score (250-850 range)")  
         
+        ext_1 = normalize_credit_score(ext_1)
+        ext_2 = normalize_credit_score(ext_2)
+        ext_3 = normalize_credit_score(ext_3)
        # st.markdown('**Client Social Circle Information**')
-        col1,col2 = st.columns(2)
+        col1, col2 = st.columns(2)
         with col1:
-            obs_60 = st.number_input("People in client social circle struggling to pay in time: last 2 months", 0,5)
+            obs_60 = st.number_input("People struggling to pay (last 2 months)", 0, 5, 0)
         with col2:
-            def_60 = st.number_input("People in client social circle who defaulted: last 2 months", 0,5)
-        col1,col2 = st.columns(2)
+            def_60 = st.number_input("People who defaulted (last 2 months)", 0, 5, 0)
+        col1, col2 = st.columns(2)
         with col1:
-            obs_30 = st.number_input("People in in in client social circle struggling to pay in time: last month", 0,5)
+            obs_30 = st.number_input("People struggling to pay (last month)", 0, 5, 0)
         with col2:
-            def_30 = st.number_input("People client social circle who defaulted: previous month", 0,5)   
-        
-        FLAG_DOCUMENT_3 = st.slider('Applicant provided **Document 3**',0,1) 
+            def_30 = st.number_input("People who defaulted (last month)", 0, 5, 0)
+        # = st.slider('Applicant provided **Document 3**',0,1) 
+        doc_3 = st.selectbox("Client provided **Document 3**?", list(doc_mapping.keys())) 
+        FLAG_DOCUMENT_3 = doc_mapping[doc_3]
           #weighted  and mean
         WEIGHTED_EXT_SOURCE = (ext_1*2) + (ext_2*3) +(ext_3*4)
         EXT_SOURCE_MEAN = (ext_1+ext_2+ext_3)/3
@@ -421,13 +425,20 @@ def run_prediction_tab(model):
         st.markdown("<h5 style='color:#FF4B4B;'>🌍 Client residential Region Information</h5>", unsafe_allow_html=True)
         col1,col2,col3 = st.columns(3)
         with col1:
-            REGION_RATING_CLIENT = st.slider('Rating of the **REGION**',1,3)
+            region = st.selectbox('Rating of the **REGION**',list(region_mapping.keys()))
         with col2:
-            REGION_RATING_CLIENT_W_CITY = st.slider('Rating of **CITY**',1,3)
+            city = st.selectbox('Rating of **CITY**',list(rating_mapping.keys()))
         with col3:
-            REGION_POPULATION_RELATIVE = st.number_input('Region Population', min_value=0.000,max_value=1.000)
+            REGION_POPULATION_RELATIVE = st.number_input('Region Population', min_value=10000, 
+                                          max_value=500000,
+                                          step=1000,help="Enter actual population count (10,000 to 5,000,000 range)")
+        REGION_RATING_CLIENT = region_mapping[region]
+        REGION_RATING_CLIENT_W_CITY = rating_mapping[city]
         REGION_RATING_MUL = REGION_RATING_CLIENT * REGION_RATING_CLIENT_W_CITY
         REGIONS_RATING_INCOME_MUL = (REGION_RATING_CLIENT +REGION_RATING_CLIENT_W_CITY) * income
+        REGION_RATING_POPULATION_MUL = REGION_RATING_MUL * REGION_POPULATION_RELATIVE
+        
+        REGION_POPULATION_RELATIVE = normalize_population(REGION_POPULATION_RELATIVE)
         #years details change 
         col1,col2,col3 = st.columns(3)
         with col1:
@@ -445,14 +456,13 @@ GENDER_SUITE_ENCODED,EDUCATION_OCCUPATION_ENCODED,
 REL_EDUCATION_ENCODED,NAME_HOUSING_TYPE_ENCODED,Age, OWN_CAR_AGE, EMPLOYED_TO_AGE_RATIO,YEARS_EMPLOYED,
  #PREV STAFF
 PREV_APP_STATUS_REFUSED,PREV_APP_RATIO_PREV_APP_STATUS_UNUSED_OFFER,
-PREV_APK_AMT_CREDIT_APPLICATION_RATIO_MEAN, PREV_APK_AMT_CREDIT_MEAN, PREV_APK_AMT_DECLINED_MIN,
-PREV_APK_AMT_INTEREST_MAX,PREV_APK_AMT_CREDIT_MIN,PREV_APK_AMT_ANNUITY_MIN,PREV_AMT_PAYMENT_MIN,PREV_AMT_INTSALMENT_MAX,COUNT_PREV_PROD_Card_Street,
+PREV_APK_AMT_CREDIT_APPLICATION_RATIO_MEAN, PREV_APK_AMT_CREDIT, PREV_APK_AMT_DECLINED,
     #instalments
     NUM_INSTALMENTS_EARLY_PAYMENTS,NUM_INSTALMENTS_LATE_PAYMENTS,NUM_INSTALMENT_PARTIAL_PAYMENTS,
 
     #Alternstive
 annuity,credit,ANNUITY_CREDIT_RATIO,CNT_FAM_MEMBERS,  YEARS_DETAILS_CHANGE_SUM,WEIGHTED_EXT_SOURCE,EXT_SOURCE_MEAN, OBS_DEF_30_MUL,OBS_DEF_60_MUL,
-DEF_30_CREDIT_RATIO,DEF_60_CREDIT_RATIO,CHILDREN_INCOME_RATIO,CREDIT_INCOME_RATIO,ANNUITY_INCOME_RATIO,REGION_RATING_MUL,REGION_POPULATION_RELATIVE,REGIONS_RATING_INCOME_MUL,FLAG_DOCUMENT_3
+DEF_30_CREDIT_RATIO,DEF_60_CREDIT_RATIO,CHILDREN_INCOME_RATIO,CREDIT_INCOME_RATIO,ANNUITY_INCOME_RATIO,REGION_RATING_MUL,REGION_RATING_POPULATION_MUL,REGIONS_RATING_INCOME_MUL,FLAG_DOCUMENT_3
 ]
             #prediction  
             label,proba,shap_values = prediction_default(inputs,model)
@@ -463,14 +473,10 @@ DEF_30_CREDIT_RATIO,DEF_60_CREDIT_RATIO,CHILDREN_INCOME_RATIO,CREDIT_INCOME_RATI
             st.markdown('**RED** coloured features increase the default probability while **BLUE** pulls it down.')
             fig,ax = plt.subplots()
             shap.plots.waterfall(shap_values[0],max_display= 10, show = False)
-            st.pyplot(fig,bbox_inches='tight')
+            st.pyplot(fig)
             
-          
-
             
         
 
 if __name__ == '__main__':
     main()
-
-
