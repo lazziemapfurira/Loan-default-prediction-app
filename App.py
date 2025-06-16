@@ -283,7 +283,7 @@ def main():
 
 def run_prediction_tab(model):
     #Get input data from user
-    with st.form( key = f'Prediction_Form_{model_name}'):
+    with st.form( key = f'Prediction_Form_{type(model).__name__}'):
         #st.markdown('**Client Personal Information**')
         st.markdown("<h5 style='color:#FF4B4B;'>👤  Client Personal Information</h5>", unsafe_allow_html=True)
         col1,col2,col3 = st.columns(3)
